@@ -1,4 +1,4 @@
-defmodule ObanMySQL.Migrations.MySQL do
+defmodule Oban.Migrations.MySQL do
   @moduledoc false
 
   @behaviour Oban.Migration

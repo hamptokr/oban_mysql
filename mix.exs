@@ -4,7 +4,7 @@ defmodule ObanMySQL.MixProject do
   def project do
     [
       app: :oban_mysql,
-      name: "ObanMySQL",
+      name: "Oban MySQL",
       version: "0.1.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -28,7 +28,8 @@ defmodule ObanMySQL.MixProject do
     [
       {:ecto_sql, "~> 3.10"},
       {:myxql, "~> 0.6"},
-      {:oban, path: "../oban", only: [:dev, :test], runtime: false}
+      {:oban, path: "../oban", only: [:dev, :test]},
+      {:stream_data, "~> 0.6.0", only: [:test]}
     ]
   end
 end

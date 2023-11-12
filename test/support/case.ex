@@ -1,21 +1,40 @@
-defmodule ObanMySQL.Case do
+defmodule Oban.Case do
   @moduledoc false
 
   use ExUnit.CaseTemplate
 
   alias Ecto.Adapters.SQL.Sandbox
+  alias Oban.Integration.Worker
   alias Oban.Job
-  alias ObanMySQL.Integration.Worker
-  alias ObanMySQL.Test.MySQLRepo
+  alias Oban.Test.{MySQLRepo, UnboxedMySQLRepo}
 
   using do
     quote do
-      import ObanMySQL.Case
+      use ExUnitProperties
 
+      import Oban.Case
+
+      alias Oban.Integration.Worker
       alias Oban.{Config, Job}
-      alias ObanMySQL.Integration.Worker
-      alias ObanMySQL.Test.MySQLRepo
+      alias Oban.Test.{MySQLRepo, UnboxedMySQLRepo}
     end
+  end
+
+  setup context do
+    cond do
+      context[:unboxed] ->
+        on_exit(fn ->
+          UnboxedMySQLRepo.delete_all(Oban.Job)
+          UnboxedMySQLRepo.delete_all(Oban.Job, prefix: "private")
+        end)
+
+      true ->
+        pid = Sandbox.start_owner!(MySQLRepo, shared: true)
+
+        on_exit(fn -> Sandbox.stop_owner(pid) end)
+    end
+
+    :ok
   end
 
   def start_supervised_oban!(opts) do
@@ -36,6 +55,26 @@ defmodule ObanMySQL.Case do
     start_supervised!({Oban, opts})
 
     name
+  end
+
+  def with_backoff(opts \\ [], fun) do
+    total = Keyword.get(opts, :total, 100)
+    sleep = Keyword.get(opts, :sleep, 10)
+
+    with_backoff(fun, 0, total, sleep)
+  end
+
+  def with_backoff(fun, count, total, sleep) do
+    fun.()
+  rescue
+    exception in [ExUnit.AssertionError] ->
+      if count < total do
+        Process.sleep(sleep)
+
+        with_backoff(fun, count + 1, total, sleep)
+      else
+        reraise(exception, __STACKTRACE__)
+      end
   end
 
   # Building

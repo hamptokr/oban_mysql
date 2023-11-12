@@ -1,11 +1,11 @@
 defmodule ObanMySQL.Engines.MySQLTest do
-  use ObanMySQL.Case, async: true
+  use Oban.Case, async: false
 
   alias Ecto.Adapters.SQL.Sandbox
-  alias ObanMySQL.TelemetryHandler
+  alias Oban.TelemetryHandler
 
-  @engine ObanMySQL.Engines.MySQL
-  @repo ObanMySQL.Test.MySQLRepo
+  @engine Oban.Engines.MySQL
+  @repo Oban.Test.MySQLRepo
 
   describe "insert/2" do
     setup :start_supervised_oban
@@ -36,7 +36,7 @@ defmodule ObanMySQL.Engines.MySQLTest do
       changeset = Worker.new(%{ref: 1}, unique: [period: 60])
 
       fun = fn ->
-        Sandbox.allow(Repo, parent, self())
+        Sandbox.allow(MySQLRepo, parent, self())
 
         {:ok, %Job{id: id}} = Oban.insert(name, changeset)
 
